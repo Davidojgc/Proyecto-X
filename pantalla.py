@@ -3,8 +3,6 @@ import pandas as pd
 import numpy as np
 import os
 import math
-pip install -r requirements.txt
-streamlit run pantalla.py
 from datetime import datetime
 
 # Configuración de página
