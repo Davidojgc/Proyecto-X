@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import os
 import math
-import openpyxl
+streamlit run pantalla.py
 from datetime import datetime
 
 # Configuración de página
