@@ -1,21 +1,31 @@
-import streamlit as st
-import time
+import tkinter as tk
+from tkinter import filedialog
 
-# Title of the web application
-st.title("Ejemplo de Aplicación Streamlit")
+class App:
+    def __init__(self, master):
+        self.master = master
+        master.title("File Upload")
 
-# Button for executing a task
-if st.button("Ejecutar"):
-    st.write("Ejecutando...")
-    
-    # Progress bar
-    progress_bar = st.progress(0)
-    for percent_complete in range(100):
-        time.sleep(0.1)  # Simulating a long-running task
-        progress_bar.progress(percent_complete + 1)
-        
-    st.write("Ejecución completada.")
+        self.create_buttons()
 
-    # Log execution output
-    st.write("Registro de Ejecución:")
-    st.write("Tarea completada exitosamente.")  # This would normally log more details.
+    def create_buttons(self):
+        buttons = [
+            "Capacidad de planta",
+            "Maestro de materiales",
+            "Maestro de clientes",
+            "Demanda",
+        ]
+
+        for title in buttons:
+            button = tk.Button(self.master, text=title, command=lambda t=title: self.upload_file(t))
+            button.pack(pady=10)
+
+    def upload_file(self, title):
+        file_path = filedialog.askopenfilename(filetypes=[("Excel files", ["*.xlsx", "*.xls"]), ("All files", ["*"])])
+        if file_path:
+            print(f"{title} file uploaded: {file_path}")
+
+if __name__ == '__main__':
+    root = tk.Tk()
+    app = App(root)
+    root.mainloop()
