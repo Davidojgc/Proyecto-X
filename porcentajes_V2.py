@@ -146,7 +146,7 @@ with tab1:
                 df_cap = pd.read_excel(file1)
                 guardar_archivo(file1, "capacidad_planta")
                 st.success("✅ Cargado")
-                st.dataframe(df_cap, use_container_width=True, height=150)
+                st.dataframe(df_cap, use_container_width=True, height=400)
             except Exception as e: st.error(f"Error: {e}")
         else: st.info("Esperando archivo...")
         st.markdown('</div>', unsafe_allow_html=True)
