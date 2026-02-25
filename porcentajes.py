@@ -44,10 +44,17 @@ if not os.path.exists(UPLOAD_DIR):
 # ==========================================
 
 def procesar_logica_estable(df_dem, df_mat, df_cli, df_cap, ajustes_semanales):
-    """Lógica con asignación por optimización de coste (Fab + Envío)"""
-    CENTRO_ES = '0833'
-    CENTRO_CH = '0184'
-    PRECIO_KM = 0.15 # Valor base para el cálculo
+    """Lógica con centros dinámicos extraídos de Capacidad Planta"""
+    
+    # 0. Extracción dinámica de centros desde el Excel de Capacidad
+    # Asumimos que la columna se llama 'Centro'
+    lista_centros_disponibles = df_cap['Centro'].unique().tolist()
+    
+    # Asignamos variables por orden de aparición en el Excel (para mantener la lógica de comparación)
+    C1 = str(lista_centros_disponibles[0])
+    C2 = str(lista_centros_disponibles[1]) if len(lista_centros_disponibles) > 1 else C1
+    
+    PRECIO_KM = 0.15 
 
     # 1. Preparación de Fechas y Semanas
     df_dem['Fecha_DT'] = pd.to_datetime(df_dem['Fecha de necesidad'])
@@ -57,28 +64,26 @@ def procesar_logica_estable(df_dem, df_mat, df_cli, df_cap, ajustes_semanales):
     df = df_dem.merge(df_mat, on=['Material', 'Unidad'], how='left')
     df = df.merge(df_cli, on='Cliente', how='left')
 
-    # 3. Decisión de Centro (Optimización de Coste)
+    # 3. Decisión de Centro (Optimización de Coste con Centros Dinámicos)
     def decidir_centro(r):
-        # Prioridad a exclusividades
-        if str(r.get('Exclusico DG')).strip().upper() == 'X': return CENTRO_ES
-        if str(r.get('Exclusivo MCH')).strip().upper() == 'X': return CENTRO_CH
+        # Prioridad a exclusividades (Basado en nombres de centros cargados)
+        if str(r.get('Exclusico DG')).strip().upper() == 'X': return C1
+        if str(r.get('Exclusivo MCH')).strip().upper() == 'X': return C2
 
-        # CÁLCULO DE OPTIMIZACIÓN
-        # Coste Total = (Distancia Excel * PrecioKM) + (Cantidad * Coste Fab Excel)
-        coste_total_es = (r.get('Distancia a 0833', 0) * PRECIO_KM) + (r.get('Cantidad', 0) * r.get('Coste fabricacion unidad DG', 0))
-        coste_total_ch = (r.get('Distancia a 0184', 0) * PRECIO_KM) + (r.get('Cantidad', 0) * r.get('Coste fabricacion unidad MCH', 0))
+        # CÁLCULO DE OPTIMIZACIÓN BASADO EN COLUMNAS DINÁMICAS
+        # Coste = (Distancia a Centro X * PrecioKM) + (Cantidad * Coste Fab Centro X)
+        coste_c1 = (r.get(f'Distancia a {C1}', 0) * PRECIO_KM) + (r.get('Cantidad', 0) * r.get('Coste fabricacion unidad DG', 0))
+        coste_c2 = (r.get(f'Distancia a {C2}', 0) * PRECIO_KM) + (r.get('Cantidad', 0) * r.get('Coste fabricacion unidad MCH', 0))
 
-        # Si un centro es claramente más barato, se elige. 
-        # Si la diferencia es mínima o no hay datos, se usa el azar de los sliders originales.
-        if coste_total_es < coste_total_ch:
-            return CENTRO_ES
-        elif coste_total_ch < coste_total_es:
-            return CENTRO_CH
+        if coste_c1 < coste_c2:
+            return C1
+        elif coste_c2 < coste_c1:
+            return C2
         else:
             rng = np.random.RandomState(r.name)
             valor_azar = rng.rand()
             umbral = ajustes_semanales.get(r['Semana_Label'], 50) / 100
-            return CENTRO_ES if valor_azar < umbral else CENTRO_CH
+            return C1 if valor_azar < umbral else C2
 
     df['Centro_Final'] = df.apply(decidir_centro, axis=1)
 
@@ -99,6 +104,9 @@ def procesar_logica_estable(df_dem, df_mat, df_cli, df_cap, ajustes_semanales):
         cant_por_orden = round(cant_total / num_ordenes, 2)
 
         for _ in range(num_ordenes):
+            # Tiempo según el centro asignado
+            t_fab = fila['Tiempo fabricación unidad DG'] if fila['Centro_Final'] == C1 else fila['Tiempo fabricación unidad MCH']
+            
             resultado_lotes.append({
                 'Nº de propuesta': cont,
                 'Material': fila['Material'],
@@ -108,7 +116,7 @@ def procesar_logica_estable(df_dem, df_mat, df_cli, df_cap, ajustes_semanales):
                 'Unidad': fila['Unidad'],
                 'Fecha de fabricación': pd.to_datetime(fila['Fecha de necesidad']).strftime('%Y%m%d'),
                 'Semana': fila['Semana_Label'],
-                'Horas': cant_por_orden * (fila['Tiempo fabricación unidad DG'] if fila['Centro_Final'] == CENTRO_ES else fila['Tiempo fabricación unidad MCH'])
+                'Horas': cant_por_orden * t_fab
             })
             cont += 1
 
@@ -138,6 +146,8 @@ with tab1:
 
 # --- PROCESAMIENTO INICIAL DE ARCHIVOS ---
 data_ready = False
+centros_detectados = []
+
 if f_cap and f_mat and f_cli and f_dem:
     try:
         df_cap = pd.read_excel(f_cap)
@@ -145,6 +155,10 @@ if f_cap and f_mat and f_cli and f_dem:
         df_cli = pd.read_excel(f_cli)
         df_dem = pd.read_excel(f_dem)
         for d in [df_cap, df_mat, df_cli, df_dem]: d.columns = d.columns.str.strip()
+        
+        # Detectar centros desde Capacidad_planta
+        centros_detectados = [str(c) for c in df_cap['Centro'].unique()]
+        
         df_dem['Semana_Label'] = pd.to_datetime(df_dem['Fecha de necesidad']).dt.strftime('%Y-W%U')
         lista_semanas = sorted(df_dem['Semana_Label'].unique())
         data_ready = True
@@ -157,7 +171,10 @@ with tab2:
         st.warning("⚠️ Esperando a que cargues los 4 archivos en la pestaña anterior.")
     else:
         st.subheader("⚙️ Configuración de Porcentajes por Semana")
-        st.info("Ajusta el % de carga para el Centro 0833 (España). El resto irá al 0184 (Suiza). El sistema priorizará la optimización por coste.")
+        c1_name = centros_detectados[0]
+        c2_name = centros_detectados[1] if len(centros_detectados) > 1 else "Centro 2"
+        
+        st.info(f"Ajusta el % de carga para el Centro **{c1_name}**. El resto irá al Centro **{c2_name}**.")
 
         ajustes = {}
         cols_sliders = st.columns(4)
@@ -167,14 +184,20 @@ with tab2:
 
         st.markdown("---")
         if st.button("🚀 EJECUTAR CÁLCULO DE PROPUESTA", use_container_width=True):
-            with st.spinner("Calculando lotes y asignaciones optimizadas..."):
+            with st.spinner("Calculando lotes y asignaciones dinámicas..."):
                 df_res = procesar_logica_estable(df_dem, df_mat, df_cli, df_cap, ajustes)
 
                 st.success("✅ Cálculo completado con éxito.")
+                
+                # Métricas dinámicas
                 m1, m2, m3 = st.columns(3)
                 m1.metric("Total Propuestas", len(df_res))
-                m2.metric("Horas Totales 0833", f"{df_res[df_res['Centro']=='0833']['Horas'].sum():,.1f}h")
-                m3.metric("Horas Totales 0184", f"{df_res[df_res['Centro']=='0184']['Horas'].sum():,.1f}h")
+                
+                for i, centro in enumerate(centros_detectados):
+                    if i == 0:
+                        m2.metric(f"Horas Totales {centro}", f"{df_res[df_res['Centro']==centro]['Horas'].sum():,.1f}h")
+                    elif i == 1:
+                        m3.metric(f"Horas Totales {centro}", f"{df_res[df_res['Centro']==centro]['Horas'].sum():,.1f}h")
 
                 st.subheader("📊 Distribución de Carga Horaria")
                 carga_plot = df_res.groupby(['Semana', 'Centro'])['Horas'].sum().unstack().fillna(0)
@@ -186,12 +209,6 @@ with tab2:
                 output_path = os.path.join(UPLOAD_DIR, "Propuesta_Final.xlsx")
                 df_res.drop(columns=['Semana', 'Horas']).to_excel(output_path, index=False)
                 with open(output_path, "rb") as f:
-                    st.download_button(
-                        label="📥 Descargar Propuesta en Excel",
-                        data=f,
-                        file_name=f"Propuesta_Fabricacion_{datetime.now().strftime('%Y%m%d')}.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        use_container_width=True
-                    )
+                    st.download_button("📥 Descargar Propuesta en Excel", data=f, file_name=f"Propuesta_Fabricacion_{datetime.now().strftime('%Y%m%d')}.xlsx")
 
-st.markdown('<div class="footer"><p>✨ Sistema de Cálculo de Fabricación - Versión 2.6 (Optimizada)</p></div>', unsafe_allow_html=True)
+st.markdown('<div class="footer"><p>✨ Sistema de Cálculo de Fabricación - Versión 3.0 (Dinámica)</p></div>', unsafe_allow_html=True)
