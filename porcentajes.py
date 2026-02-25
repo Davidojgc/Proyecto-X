@@ -1,203 +1,132 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import os
 import math
 from datetime import datetime
 
-# Configuración de página
-st.set_page_config(
-    page_title="Sistema de Cálculo de Fabricación",
-    page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# --- CONFIGURACIÓN DE PÁGINA ---
+st.set_page_config(page_title="Optimización Sourcing 0833/0184", page_icon="🏭", layout="wide")
 
-# ==========================================
-# ESTILOS CSS PERSONALIZADOS
-# ==========================================
-st.markdown("""
-    <style>
-    .main { padding-top: 2rem; }
-    h1 { color: #1f77b4; text-align: center; font-size: 2.5rem; margin-bottom: 1rem; }
-    .section-container {
-        background-color: #f8f9fa;
-        padding: 1.5rem;
-        border-radius: 10px;
-        border-left: 5px solid #1f77b4;
-        margin-bottom: 1.5rem;
-    }
-    .footer {
-        text-align: center; color: #7f8c8d; font-size: 0.9rem; margin-top: 2rem;
-        padding-top: 1rem; border-top: 1px solid #ecf0f1;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-# Crear carpeta para guardar archivos si no existe
-UPLOAD_DIR = "archivos_cargados"
-if not os.path.exists(UPLOAD_DIR):
-    os.makedirs(UPLOAD_DIR)
-
-# ==========================================
-# FUNCIONES DE LÓGICA Y CÁLCULO
-# ==========================================
-
-def procesar_logica_estable(df_dem, df_mat, df_cli, df_cap, ajustes_semanales):
-    """Lógica con asignación estable por azar fijo y porcentajes"""
+# --- LÓGICA DE CÁLCULO ---
+@st.cache_data
+def procesar_logica_optimizada(df_dem, df_mat, df_cli, coste_km_user):
+    # Definición de centros actualizada
     CENTRO_ES = '0833'
-    CENTRO_CH = '0181'
-    
-    # 1. Preparación de Fechas y Semanas
+    CENTRO_CH = '0184' # Cambiado de 0181 a 0184
+
+    # 1. Preparación de datos
     df_dem['Fecha_DT'] = pd.to_datetime(df_dem['Fecha de necesidad'])
     df_dem['Semana_Label'] = df_dem['Fecha_DT'].dt.strftime('%Y-W%U')
-    
-    # 2. Unión con Maestros
+
+    # 2. Unión de datos (Merge con maestros)
     df = df_dem.merge(df_mat, on=['Material', 'Unidad'], how='left')
     df = df.merge(df_cli, on='Cliente', how='left')
-    
-    # 3. Decisión de Centro Estable
+
     def decidir_centro(r):
-        # Prioridad a exclusividades
-        if str(r.get('Exclusico DG')).strip().upper() == 'X': return CENTRO_ES
-        if str(r.get('Exclusivo MCH')).strip().upper() == 'X': return CENTRO_CH
-        
-        # Azar fijo basado en el índice de la fila para que no cambie al mover otros sliders
-        rng = np.random.RandomState(r.name)
-        valor_azar = rng.rand()
-        
-        umbral = ajustes_semanales.get(r['Semana_Label'], 50) / 100
-        return CENTRO_ES if valor_azar < umbral else CENTRO_CH
+        # A. Prioridad a exclusividades
+        if str(r.get('Exclusico DG')).strip().upper() == 'X': return CENTRO_ES, 0
+        if str(r.get('Exclusivo MCH')).strip().upper() == 'X': return CENTRO_CH, 0
 
-    df['Centro_Final'] = df.apply(decidir_centro, axis=1)
+        # B. Obtención de variables dinámicas del Excel de Clientes y Materiales
+        dist_es = r.get('Distancia a 0833', 0)
+        dist_ch = r.get('Distancia a 0184', 0) # Columna actualizada
+        
+        c_fab_es = r.get('Coste fabricacion unidad DG', 0)
+        c_fab_ch = r.get('Coste fabricacion unidad MCH', 0)
+        cant = r.get('Cantidad', 0)
 
-    # 4. Agrupación por Lotes
+        # C. Cálculo de Coste Total: (Distancia * Precio/Km) + (Cantidad * Coste Fab)
+        total_es = (dist_es * coste_km_user) + (cant * c_fab_es)
+        total_ch = (dist_ch * coste_km_user) + (cant * c_fab_ch)
+        
+        # Selección del más óptimo
+        centro_final = CENTRO_ES if total_es < total_ch else CENTRO_CH
+        ahorro = abs(total_es - total_ch)
+        
+        return centro_final, ahorro
+
+    # Aplicar lógica
+    res_apply = df.apply(decidir_centro, axis=1)
+    df['Centro_Final'] = [x[0] for x in res_apply]
+    df['Ahorro_Estimado'] = [x[1] for x in res_apply]
+
+    # 3. Agrupación y Generación de Lotes
+    resultado_lotes = []
     df_agrupado = df.groupby(['Material', 'Unidad', 'Centro_Final', 'Fecha de necesidad', 'Semana_Label']).agg({
         'Cantidad': 'sum',
         'Tamaño lote mínimo': 'first',
         'Tamaño lote máximo': 'first',
         'Tiempo fabricación unidad DG': 'first',
-        'Tiempo fabricación unidad MCH': 'first'
+        'Tiempo fabricación unidad MCH': 'first',
+        'Ahorro_Estimado': 'sum'
     }).reset_index()
 
-    resultado_lotes = []
-    cont = 1
     for _, fila in df_agrupado.iterrows():
         cant_total = max(fila['Cantidad'], fila['Tamaño lote mínimo'])
         num_ordenes = math.ceil(cant_total / fila['Tamaño lote máximo'])
         cant_por_orden = round(cant_total / num_ordenes, 2)
-        
-        for _ in range(num_ordenes):
+        ahorro_por_orden = round(fila['Ahorro_Estimado'] / num_ordenes, 2)
+
+        for i in range(num_ordenes):
+            # Selección de tiempo de fabricación según centro final
+            t_fab = fila['Tiempo fabricación unidad DG'] if fila['Centro_Final'] == CENTRO_ES else fila['Tiempo fabricación unidad MCH']
+            
             resultado_lotes.append({
-                'Nº de propuesta': cont,
                 'Material': fila['Material'],
                 'Centro': fila['Centro_Final'],
-                'Clase de orden': 'NORM',
-                'Cantidad a fabricar': cant_por_orden,
+                'Cantidad Propuesta': cant_por_orden,
                 'Unidad': fila['Unidad'],
-                'Fecha de fabricación': pd.to_datetime(fila['Fecha de necesidad']).strftime('%Y%m%d'),
                 'Semana': fila['Semana_Label'],
-                'Horas': cant_por_orden * (fila['Tiempo fabricación unidad DG'] if fila['Centro_Final'] == CENTRO_ES else fila['Tiempo fabricación unidad MCH'])
+                'Fecha Carga': pd.to_datetime(fila['Fecha de necesidad']).strftime('%d/%m/%Y'),
+                'Horas Totales': round(cant_por_orden * t_fab, 2),
+                'Ahorro Optimización (€)': ahorro_por_orden
             })
-            cont += 1
-            
+
     return pd.DataFrame(resultado_lotes)
 
-# ==========================================
-# INTERFAZ PRINCIPAL (TABS)
-# ==========================================
-st.markdown("<h1>📊 Sistema de Cálculo de Fabricación</h1>", unsafe_allow_html=True)
+# --- INTERFAZ DE USUARIO ---
+st.title("📊 Optimizador de Sourcing: Centros 0833 y 0184")
 
-tab1, tab2 = st.tabs(["📥 1. Carga de Archivos", "⚙️ 2. Ajuste y Ejecución"])
+with st.sidebar:
+    st.header("Configuración")
+    precio_km = st.number_input("Coste transporte (€/km)", value=0.15, format="%.2f")
+    st.divider()
+    st.caption("Nota: El sistema comparará el coste de envío + fabricación para elegir entre España (0833) y Suiza (0184).")
 
-# --- TAB 1: CARGA ---
+tab1, tab2 = st.tabs(["📥 Gestión de Archivos", "🚀 Ejecutar Propuesta"])
+
 with tab1:
-    st.subheader("📁 Carga los 4 archivos maestros")
+    st.subheader("Subida de Maestros")
     col1, col2 = st.columns(2)
-    
     with col1:
-        st.markdown('<div class="section-container">### 🏭 Capacidad Planta</div>', unsafe_allow_html=True)
-        f_cap = st.file_uploader("Capacidad", type=["xlsx"], label_visibility="collapsed", key="u1")
-        
-        st.markdown('<div class="section-container">### 📦 Maestro Materiales</div>', unsafe_allow_html=True)
-        f_mat = st.file_uploader("Materiales", type=["xlsx"], label_visibility="collapsed", key="u2")
-        
+        up_dem = st.file_uploader("1. Archivo de Demanda", type=["xlsx"])
+        up_mat = st.file_uploader("2. Maestro Materiales (Costes DG/MCH)", type=["xlsx"])
     with col2:
-        st.markdown('<div class="section-container">### 👥 Maestro Clientes</div>', unsafe_allow_html=True)
-        f_cli = st.file_uploader("Clientes", type=["xlsx"], label_visibility="collapsed", key="u3")
-        
-        st.markdown('<div class="section-container">### 📈 Demanda</div>', unsafe_allow_html=True)
-        f_dem = st.file_uploader("Demanda", type=["xlsx"], label_visibility="collapsed", key="u4")
+        up_cli = st.file_uploader("3. Maestro Clientes (Distancias 0833/0184)", type=["xlsx"])
 
-# --- PROCESAMIENTO INICIAL DE ARCHIVOS ---
-data_ready = False
-if f_cap and f_mat and f_cli and f_dem:
-    try:
-        df_cap = pd.read_excel(f_cap)
-        df_mat = pd.read_excel(f_mat)
-        df_cli = pd.read_excel(f_cli)
-        df_dem = pd.read_excel(f_dem)
-        
-        # Limpieza de columnas
-        for d in [df_cap, df_mat, df_cli, df_dem]: d.columns = d.columns.str.strip()
-        
-        # Identificar semanas para los sliders
-        df_dem['Semana_Label'] = pd.to_datetime(df_dem['Fecha de necesidad']).dt.strftime('%Y-W%U')
-        lista_semanas = sorted(df_dem['Semana_Label'].unique())
-        data_ready = True
-    except Exception as e:
-        st.error(f"Error al leer archivos: {e}")
+if up_dem and up_mat and up_cli:
+    # Carga de datos
+    df_dem = pd.read_excel(up_dem)
+    df_mat = pd.read_excel(up_mat)
+    df_cli = pd.read_excel(up_cli)
 
-# --- TAB 2: EJECUCIÓN ---
-with tab2:
-    if not data_ready:
-        st.warning("⚠️ Esperando a que cargues los 4 archivos en la pestaña anterior.")
-    else:
-        st.subheader("⚙️ Configuración de Porcentajes por Semana")
-        st.info("Ajusta el % de carga que deseas enviar al Centro 0833 (España). El resto irá al 0181 (Suiza).")
-        
-        # Sliders organizados en columnas para que no ocupen tanto espacio
-        ajustes = {}
-        cols_sliders = st.columns(4)
-        for i, sem in enumerate(lista_semanas):
-            with cols_sliders[i % 4]:
-                ajustes[sem] = st.slider(f"Sem {sem}", 0, 100, 50)
-        
-        st.markdown("---")
-        if st.button("🚀 EJECUTAR CÁLCULO DE PROPUESTA", use_container_width=True):
-            with st.spinner("Calculando lotes y asignaciones..."):
-                df_res = procesar_logica_estable(df_dem, df_mat, df_cli, df_cap, ajustes)
+    with tab2:
+        if st.button("GENERAR PROPUESTA ÓPTIMA"):
+            with st.spinner("Calculando rutas y costes..."):
+                df_res = procesar_logica_optimizada(df_dem, df_mat, df_cli, precio_km)
                 
-                # --- VISUALIZACIÓN DE RESULTADOS ---
-                st.success("✅ Cálculo completado con éxito.")
-                
-                # Métricas
+                # Visualización de métricas
                 m1, m2, m3 = st.columns(3)
-                m1.metric("Total Propuestas", len(df_res))
-                m2.metric("Horas Totales 0833", f"{df_res[df_res['Centro']=='0833']['Horas'].sum():,.1f}h")
-                m3.metric("Horas Totales 0181", f"{df_res[df_res['Centro']=='0181']['Horas'].sum():,.1f}h")
+                m1.metric("Ahorro Total Estimado", f"{df_res['Ahorro Optimización (€)'].sum():,.2f} €")
+                m2.metric("Carga de Trabajo (Horas)", f"{df_res['Horas Totales'].sum():,.1f} h")
                 
-                # Gráfico de carga
-                st.subheader("📊 Distribución de Carga Horaria")
-                carga_plot = df_res.groupby(['Semana', 'Centro'])['Horas'].sum().unstack().fillna(0)
-                st.bar_chart(carga_plot)
-                
-                # Tabla de datos
-                st.subheader("📋 Detalle de la Propuesta")
-                st.dataframe(df_res.drop(columns=['Horas']), use_container_width=True)
-                
-                # Botón de Descarga
-                output_path = os.path.join(UPLOAD_DIR, "Propuesta_Final.xlsx")
-                df_res.drop(columns=['Semana', 'Horas']).to_excel(output_path, index=False)
-                
-                with open(output_path, "rb") as f:
-                    st.download_button(
-                        label="📥 Descargar Propuesta en Excel",
-                        data=f,
-                        file_name=f"Propuesta_Fabricacion_{datetime.now().strftime('%Y%m%d')}.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        use_container_width=True
-                    )
+                distribucion = df_res['Centro'].value_counts(normalize=True) * 100
+                m3.metric("% Carga 0833", f"{distribucion.get('0833', 0):.1f}%")
 
-# Footer
-st.markdown('<div class="footer"><p>✨ Sistema de Cálculo de Fabricación - Versión 2.5</p></div>', unsafe_allow_html=True)
+                # Tabla de resultados
+                st.subheader("📋 Detalle de la Propuesta")
+                st.dataframe(df_res, use_container_width=True)
+
+                # Exportación
+                csv = df_res.to_csv(index=False).encode('utf-8')
+                st.download_button("📥 Descargar Propuesta en CSV", data=csv, file_name="propuesta_sourcing.csv")
