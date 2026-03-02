@@ -17,7 +17,7 @@ col1, col2 = st.columns(2)
 with col1:
     # BOTÓN CON TU LIBRERÍA
     if st.button("➕ Crear nuevo escenario", use_container_width=True):
-        st.info("Accediendo a la librería: porcentajes _versión_3.py...")
+        st.info("Accediendo a la librería: porcentajes_v3...")
         
         # Llamamos a la función que vive en tu otro archivo
         resultado = lib_porcentajes.calcular_escenario_base()
