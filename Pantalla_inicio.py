@@ -1,39 +1,42 @@
 import streamlit as st
-# IMPORTANTE: Importamos las funciones de tu archivo específico
-import porcentajes_v3 as lib_porcentajes
+import importlib.util
+import sys
 
-# Configuración visual
-st.set_page_config(page_title="Panel de Control", layout="centered")
+# --- FUNCIÓN PARA CARGAR TU LIBRERÍA CON NOMBRE ESPECIAL ---
+def cargar_mi_libreria():
+    nombre_archivo = "porcentajes_versión_3.py"
+    spec = importlib.util.spec_from_file_location("mi_modulo", nombre_archivo)
+    mi_modulo = importlib.util.module_from_spec(spec)
+    sys.modules["mi_modulo"] = mi_modulo
+    spec.loader.exec_module(mi_modulo)
+    return mi_modulo
 
-st.title("Sistema de Gestión 👋")
-st.subheader("Selecciona una acción para comenzar")
+# Cargamos la librería
+lib_porcentajes = cargar_mi_libreria()
 
-# Separador visual
-st.markdown("---")
+# --- CONFIGURACIÓN DE LA INTERFAZ ---
+st.set_page_config(page_title="Mi App Pro", layout="centered")
 
-# Creación de la interfaz de botones
+st.title("Welcome back! 👋")
+st.subheader("¿Qué quieres hacer hoy?")
+
 col1, col2 = st.columns(2)
 
 with col1:
-    # BOTÓN CON TU LIBRERÍA
+    # BOTÓN: CREAR NUEVO ESCENARIO
     if st.button("➕ Crear nuevo escenario", use_container_width=True):
-        st.info("Accediendo a la librería: porcentajes_v3...")
+        st.write("Accediendo a la librería: porcentajes_versión_3...")
         
-        # Llamamos a la función que vive en tu otro archivo
-        resultado = lib_porcentajes.calcular_escenario_base()
-        datos = lib_porcentajes.generar_grafico_escenario()
-        
-        st.success(resultado)
-        st.line_chart(datos) # Ejemplo visual de que algo ocurrió
+        # Aquí llamas a las funciones que tengas dentro de tu archivo
+        # Ejemplo: resultado = lib_porcentajes.nombre_de_tu_funcion()
+        st.success("Librería cargada correctamente.")
 
     if st.button("📊 Datos maestros", use_container_width=True):
-        st.write("Abriendo panel de datos...")
+        st.info("Cargando base de datos...")
 
 with col2:
     if st.button("📜 Historial", use_container_width=True):
-        st.write("Cargando registros anteriores...")
+        st.write("Consultando logs anteriores...")
 
     if st.button("📅 Calendario", use_container_width=True):
-        st.write("Sincronizando fechas...")
-
-st.markdown("---")
+        st.write("Abriendo agenda...")
