@@ -7,7 +7,7 @@ from pathlib import Path
 def cargar_mi_libreria():
     # En Streamlit Cloud, el archivo raíz es donde está Pantalla_inicio.py
     # Si porcentajes_versión_3.py está al mismo nivel, la ruta es solo el nombre del archivo.
-    nombre_archivo = "porcentajes_versión_3.py"
+    nombre_archivo = "porcentajes_version_3.py"
     
     # Obtenemos la ruta absoluta del directorio actual
     directorio_actual = Path(__file__).parent.absolute()
