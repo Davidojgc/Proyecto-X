@@ -1,25 +1,39 @@
 import streamlit as st
+# IMPORTANTE: Importamos las funciones de tu archivo específico
+import porcentajes_v3 as lib_porcentajes
 
-# Configuración de la página
-st.set_page_config(page_title="Mi App Pro", layout="centered")
+# Configuración visual
+st.set_page_config(page_title="Panel de Control", layout="centered")
 
-st.title("Welcome back! 👋")
-st.subheader("¿Qué quieres hacer hoy?")
+st.title("Sistema de Gestión 👋")
+st.subheader("Selecciona una acción para comenzar")
 
-# Creamos una cuadrícula de 2x2 para los botones
+# Separador visual
+st.markdown("---")
+
+# Creación de la interfaz de botones
 col1, col2 = st.columns(2)
 
 with col1:
+    # BOTÓN CON TU LIBRERÍA
     if st.button("➕ Crear nuevo escenario", use_container_width=True):
-        st.write("Redirigiendo a Nuevo Escenario...")
-        # Aquí puedes cambiar una variable de estado para moverte de página
+        st.info("Accediendo a la librería: porcentajes _versión_3.py...")
+        
+        # Llamamos a la función que vive en tu otro archivo
+        resultado = lib_porcentajes.calcular_escenario_base()
+        datos = lib_porcentajes.generar_grafico_escenario()
+        
+        st.success(resultado)
+        st.line_chart(datos) # Ejemplo visual de que algo ocurrió
 
     if st.button("📊 Datos maestros", use_container_width=True):
-        st.info("Cargando base de datos...")
+        st.write("Abriendo panel de datos...")
 
 with col2:
     if st.button("📜 Historial", use_container_width=True):
-        st.write("Consultando logs anteriores...")
+        st.write("Cargando registros anteriores...")
 
     if st.button("📅 Calendario", use_container_width=True):
-        st.write("Abriendo agenda...")
+        st.write("Sincronizando fechas...")
+
+st.markdown("---")
