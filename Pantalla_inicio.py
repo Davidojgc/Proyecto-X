@@ -1,39 +1,57 @@
 import streamlit as st
-# Ahora importamos de la manera limpia y oficial
-try:
-    import V3 as lib_v3
-except ImportError:
-    st.error("No se pudo encontrar el archivo V3.py en la raíz del repositorio.")
+import V3  # Importamos tu librería directamente
 
-# Configuración de la página
-st.set_page_config(page_title="Mi App Pro", layout="centered")
+# 1. Configuración de la página
+st.set_page_config(page_title="Panel de Control", layout="centered")
 
-st.title("Welcome back! 👋")
-st.subheader("Panel de Control - Proyecto-X")
+# 2. Inicialización del estado de la sesión (Navegación)
+if 'pagina_actual' not in st.session_state:
+    st.session_state.pagina_actual = 'inicio'
 
-# Separador visual
-st.divider()
+# --- FUNCIÓN PARA VOLVER AL INICIO ---
+def volver_inicio():
+    st.session_state.pagina_actual = 'inicio'
 
-# Creamos la cuadrícula de 2x2 para los botones
-col1, col2 = st.columns(2)
+# --- LÓGICA DE NAVEGACIÓN ---
 
-with col1:
-    # BOTÓN: CREAR NUEVO ESCENARIO
-    if st.button("➕ Crear nuevo escenario", use_container_width=True):
-        st.write("Accediendo a la librería V3...")
-        
-        # Aquí ya puedes llamar a tus funciones directamente
-        # Ejemplo: resultado = lib_v3.tu_funcion_aqui()
-        st.success("✅ Librería V3 conectada y ejecutada.")
+# CASO A: PANTALLA DE INICIO
+if st.session_state.pagina_actual == 'inicio':
+    st.title("Bienvenido al Sistema 👋")
+    st.subheader("Selecciona una opción")
+    st.divider()
 
-    if st.button("📊 Datos maestros", use_container_width=True):
-        st.info("Cargando base de datos...")
+    # Creamos la cuadrícula de 2x2
+    col1, col2 = st.columns(2)
 
-with col2:
-    if st.button("📜 Historial", use_container_width=True):
-        st.write("Consultando logs anteriores...")
+    with col1:
+        if st.button("➕ Crear nuevo escenario", use_container_width=True):
+            st.session_state.pagina_actual = 'crear_escenario'
+            st.rerun()
 
-    if st.button("📅 Calendario", use_container_width=True):
-        st.write("Abriendo agenda...")
+        if st.button("📊 Datos Maestros", use_container_width=True):
+            st.info("Has seleccionado: Datos Maestros")
 
-st.divider()
+    with col2:
+        if st.button("📜 Historial", use_container_width=True):
+            st.info("Has seleccionado: Historial")
+
+        if st.button("📅 Calendario", use_container_width=True):
+            st.info("Has seleccionado: Calendario")
+
+# CASO B: PANTALLA DE NUEVO ESCENARIO (Llamando a V3.py)
+elif st.session_state.pagina_actual == 'crear_escenario':
+    if st.button("⬅️ Volver al menú"):
+        volver_inicio()
+        st.rerun()
+    
+    st.title("🛠️ Nuevo Escenario")
+    st.write("Ejecutando lógica desde V3.py...")
+    
+    # LLAMADA A TU LIBRERÍA
+    # Aquí asumo que tienes una función llamada 'ejecutar' o similar en V3.py
+    try:
+        # Ejemplo: llamamos a una función de V3 que dibuje algo o haga cálculos
+        V3.ejecutar_interfaz() 
+    except AttributeError:
+        st.warning("La librería V3.py se cargó, pero no encontré la función 'ejecutar_interfaz()'.")
+        st.info("Asegúrate de tener: def ejecutar_interfaz(): dentro de V3.py")
