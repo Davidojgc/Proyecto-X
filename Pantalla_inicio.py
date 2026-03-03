@@ -91,7 +91,7 @@ if not st.session_state.autenticado:
 # ==========================================
 
 with st.sidebar:
-    st.markdown('<div class="mosh-logo">Proyecto-Z</div>', unsafe_allow_html=True)
+    st.markdown('<div class="mosh-logo">Proyecto-X</div>', unsafe_allow_html=True)
     
     if 'current_page' not in st.session_state:
         st.session_state.current_page = 'Nueva propuesta de fabricación'
