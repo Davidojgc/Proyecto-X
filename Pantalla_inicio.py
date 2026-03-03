@@ -76,11 +76,11 @@ with st.sidebar:
         st.session_state.current_page = name
 
     # Botones que parecen parte del fondo
-    st.button("🗺️ Tablas maestras 〉", on_click=set_page, args=('Tablas maestras',))
-    st.button("📋 Set Up Planning 〉", on_click=set_page, args=('Set Up Planning',))
+    st.button("🗺️ Nueva propuesta 〉", on_click=set_page, args=('Tablas maestras',))
+    st.button("📋 Datos maestros 〉", on_click=set_page, args=('Set Up Planning',))
     st.button("📦 Lanzamientos", on_click=set_page, args=('Lanzamientos',))
     st.button("🏭 Órdenes de fabricación 〉", on_click=set_page, args=('Órdenes de fabricación',))
-    st.button("🔍 Consulta / Trazabilidad", on_click=set_page, args=('Consulta / Trazabilidad',))
+    st.button("🔍 Histórico, on_click=set_page, args=('Consulta / Trazabilidad',))
     st.button("⚙️ Administración 〉", on_click=set_page, args=('Administración',))
     
     st.markdown("<br><br>", unsafe_allow_html=True)
