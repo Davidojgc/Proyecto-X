@@ -1,57 +1,57 @@
 import streamlit as st
-import V3  # Importamos tu librería directamente
 
-# 1. Configuración de la página
-st.set_page_config(page_title="Panel de Control", layout="centered")
+# Configuración de la página
+st.set_page_config(page_title="Gestor de Escenarios", layout="wide")
 
-# 2. Inicialización del estado de la sesión (Navegación)
-if 'pagina_actual' not in st.session_state:
-    st.session_state.pagina_actual = 'inicio'
+def main():
+    st.title("🚀 Sistema de Gestión Operativa")
+    st.markdown("---")
 
-# --- FUNCIÓN PARA VOLVER AL INICIO ---
-def volver_inicio():
-    st.session_state.pagina_actual = 'inicio'
+    # Sidebar para la navegación (opcional, pero recomendado)
+    st.sidebar.header("Menú de Navegación")
+    
+    # Creamos columnas para los botones principales
+    col1, col2, col3 = st.columns(3)
 
-# --- LÓGICA DE NAVEGACIÓN ---
+    # Inicializamos el estado de la aplicación si no existe
+    if 'menu_actual' not in st.session_state:
+        st.session_state.menu_actual = "Inicio"
 
-# CASO A: PANTALLA DE INICIO
-if st.session_state.pagina_actual == 'inicio':
-    st.title("Bienvenido al Sistema 👋")
-    st.subheader("Selecciona una opción")
-    st.divider()
-
-    # Creamos la cuadrícula de 2x2
-    col1, col2 = st.columns(2)
-
+    # Lógica de los botones
     with col1:
-        if st.button("➕ Crear nuevo escenario", use_container_width=True):
-            st.session_state.pagina_actual = 'crear_escenario'
-            st.rerun()
-
-        if st.button("📊 Datos Maestros", use_container_width=True):
-            st.info("Has seleccionado: Datos Maestros")
+        if st.button("🆕 Crear Escenario", use_container_width=True):
+            st.session_state.menu_actual = "crear"
 
     with col2:
         if st.button("📜 Historial", use_container_width=True):
-            st.info("Has seleccionado: Historial")
+            st.session_state.menu_actual = "historial"
 
-        if st.button("📅 Calendario", use_container_width=True):
-            st.info("Has seleccionado: Calendario")
+    with col3:
+        if st.button("📊 Datos Maestros", use_container_width=True):
+            st.session_state.menu_actual = "datos"
 
-# CASO B: PANTALLA DE NUEVO ESCENARIO (Llamando a V3.py)
-elif st.session_state.pagina_actual == 'crear_escenario':
-    if st.button("⬅️ Volver al menú"):
-        volver_inicio()
-        st.rerun()
-    
-    st.title("🛠️ Nuevo Escenario")
-    st.write("Ejecutando lógica desde V3.py...")
-    
-    # LLAMADA A TU LIBRERÍA
-    # Aquí asumo que tienes una función llamada 'ejecutar' o similar en V3.py
-    try:
-        # Ejemplo: llamamos a una función de V3 que dibuje algo o haga cálculos
-        V3.ejecutar_interfaz() 
-    except AttributeError:
-        st.warning("La librería V3.py se cargó, pero no encontré la función 'ejecutar_interfaz()'.")
-        st.info("Asegúrate de tener: def ejecutar_interfaz(): dentro de V3.py")
+    st.markdown("---")
+
+    # Despliegue de contenido según el botón presionado
+    if st.session_state.menu_actual == "crear":
+        st.header("🛠️ Configuración de Nuevo Escenario")
+        st.text_input("Nombre del Escenario")
+        st.date_input("Fecha de inicio")
+        st.button("Guardar Escenario")
+
+    elif st.session_state.menu_actual == "historial":
+        st.header("📜 Historial de Registros")
+        st.info("Aquí aparecerán los escenarios guardados anteriormente.")
+        # Ejemplo de tabla de datos
+        st.table({"ID": [1, 2], "Nombre": ["Escenario A", "Escenario B"], "Estado": ["Finalizado", "Pendiente"]})
+
+    elif st.session_state.menu_actual == "datos":
+        st.header("📊 Gestión de Datos Maestros")
+        st.write("Carga y edición de parámetros base del sistema.")
+        st.file_uploader("Cargar archivo CSV/Excel", type=["csv", "xlsx"])
+
+    else:
+        st.write("Selecciona una opción arriba para comenzar.")
+
+if __name__ == "__main__":
+    main()
