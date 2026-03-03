@@ -41,47 +41,53 @@ st.markdown("""
             padding-left: 40px !important;
             font-size: 14px;
         }
+
+        /* Estilo para el botón de la pantalla de login */
+        .login-button div.stButton > button {
+            background-color: #004d85 !important;
+            color: white !important;
+            text-align: center !important;
+            border-radius: 5px !important;
+            border: 1px solid white !important;
+        }
     </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. LÓGICA DE AUTENTICACIÓN (REDEFINIDA)
+# 2. LÓGICA DE AUTENTICACIÓN (CON FORMULARIO)
 # ==========================================
 
-# Inicializamos variables de estado si no existen
 if 'autenticado' not in st.session_state:
     st.session_state.autenticado = False
-
 if 'usuario' not in st.session_state:
     st.session_state.usuario = ""
 
-# Función para procesar el login
-def login():
-    if st.session_state.user_input:
-        st.session_state.autenticado = True
-        st.session_state.usuario = st.session_state.user_input
-    else:
-        st.error("Por favor, introduce un usuario.")
-
-# PANTALLA DE LOGIN
 if not st.session_state.autenticado:
     _, col2, _ = st.columns([1, 1, 1])
     with col2:
         st.markdown("<br><br><h1 style='text-align: center; color: #004d85;'>💧 MOSH</h1>", unsafe_allow_html=True)
-        st.write("### Iniciar Sesión")
+        st.write("### Identificación")
         
-        # Usamos 'key' para vincular el input directamente al session_state
-        st.text_input("Usuario", key="user_input")
-        st.text_input("Contraseña", type="password")
-        
-        # El botón llama a la función login
-        st.button("Entrar", on_click=login)
+        # Usamos un formulario para agrupar los inputs y el botón
+        with st.form("login_form"):
+            user_val = st.text_input("Usuario")
+            pass_val = st.text_input("Contraseña", type="password")
+            
+            # Botón justo debajo de la contraseña
+            submit_button = st.form_submit_button("Acceder al Programa", use_container_width=True)
+            
+            if submit_button:
+                if user_val: # Si el usuario ha escrito algo
+                    st.session_state.autenticado = True
+                    st.session_state.usuario = user_val
+                    st.rerun()
+                else:
+                    st.error("Por favor, introduce tu nombre de usuario.")
     
-    # Detenemos la ejecución para que no cargue el resto si no está logueado
     st.stop()
 
 # ==========================================
-# 3. INTERFAZ PRINCIPAL (Solo accesible si autenticado = True)
+# 3. INTERFAZ PRINCIPAL (Solo tras login)
 # ==========================================
 
 with st.sidebar:
@@ -126,4 +132,3 @@ st.write("---")
 st.write(f"## {st.session_state.current_page}")
 st.write("### Mosh")
 st.write("---")
-st.success(f"Sesión iniciada correctamente como: {st.session_state.usuario}")
