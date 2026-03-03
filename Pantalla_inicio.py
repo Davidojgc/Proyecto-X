@@ -1,7 +1,7 @@
 import streamlit as st
 
 # ==========================================
-# 1. CONFIGURACIÓN Y ESTILOS
+# 1. CONFIGURACIÓN Y ESTILOS (BOTONES SIN RECUADRO)
 # ==========================================
 st.set_page_config(page_title="MOSH - Grifols", layout="wide")
 
@@ -11,29 +11,37 @@ st.markdown("""
             background-color: #004d85;
         }
         
-        /* Estilo para los botones principales y subbotones */
+        /* ESTILO BASE PARA LOS BOTONES DEL SIDEBAR */
         div.stButton > button {
-            background-color: #004d85;
+            background-color: transparent; /* Sin fondo */
             color: white;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: none;                  /* QUITAMOS EL RECUADRO BLANCO */
             border-radius: 0px;
             width: 100%;
             text-align: left;
             padding: 10px 20px;
             font-size: 16px;
+            transition: background-color 0.3s;
         }
 
+        /* Efecto Hover: Que se vea un sombreado azul al pasar el ratón */
         div.stButton > button:hover {
-            background-color: #003366;
+            background-color: rgba(255, 255, 255, 0.1); 
             color: white;
-            border: 1px solid white;
+            border: none;
         }
 
-        /* Estilo específico para los subbotones (indentación) */
+        /* Ajuste para el Expander de Datos Maestros */
+        .stExpander {
+            border: none !important;
+            background-color: transparent !important;
+        }
+        
+        /* Estilo para los sub-botones dentro de Datos Maestros */
         .sub-button div.stButton > button {
             padding-left: 40px !important;
             font-size: 14px;
-            background-color: #003d6a; /* Un tono ligeramente distinto para diferenciarlo */
+            opacity: 0.8; /* Un poco más suaves */
         }
 
         .mosh-logo {
@@ -42,16 +50,6 @@ st.markdown("""
             font-weight: bold;
             padding: 20px 0;
             text-align: center;
-        }
-
-        /* Ajuste para el Expander (el desplegable) */
-        .stExpander {
-            border: none !important;
-            background-color: transparent !important;
-        }
-        .stExpander [data-testid="stExpanderDetails"] {
-            padding-top: 0px;
-            padding-bottom: 0px;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -77,7 +75,7 @@ if not st.session_state.autenticado:
     st.stop()
 
 # ==========================================
-# 3. SIDEBAR CON SUBMENÚ DESPLEGABLE
+# 3. SIDEBAR (BOTONES LIMPIOS)
 # ==========================================
 with st.sidebar:
     st.markdown('<div class="mosh-logo">MOSH</div>', unsafe_allow_html=True)
@@ -88,10 +86,10 @@ with st.sidebar:
     def set_page(name):
         st.session_state.current_page = name
 
-    # Botón 1: Directo
+    # Botón 1: Sin recuadro
     st.button("⚙️ Nueva propuesta de fabricación", on_click=set_page, args=('Nueva propuesta de fabricación',))
 
-    # Botón 2: DATOS MAESTROS (Usamos un Expander para el despliegue)
+    # Botón 2: DATOS MAESTROS (Mantenemos el expander por funcionalidad)
     with st.expander("📊 Datos maestros", expanded=False):
         st.markdown('<div class="sub-button">', unsafe_allow_html=True)
         if st.button("• Materiales"):
@@ -102,13 +100,14 @@ with st.sidebar:
             set_page("Datos maestros - Plantas y capacidad")
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # Botón 3: Directo
+    # Botón 3: Sin recuadro
     st.button("📜 Historial de propuestas", on_click=set_page, args=('Historial de propuestas',))
     
-    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown("<br><br><br>", unsafe_allow_html=True)
     st.write("---")
-    st.markdown(f"<p style='color:white; margin-left:20px;'>👤 {st.session_state.usuario}</p>", unsafe_allow_html=True)
+    st.markdown(f"<p style='color:white; margin-left:20px; font-weight: bold;'>👤 {st.session_state.usuario}</p>", unsafe_allow_html=True)
     
+    # El botón de cerrar sesión también lo he dejado limpio para que combine
     if st.button("🚫 Cerrar Sesión"):
         st.session_state.autenticado = False
         st.rerun()
@@ -127,10 +126,4 @@ st.write(f"## {st.session_state.current_page}")
 st.write("### Mosh")
 st.write("---")
 
-# Ejemplo de contenido dinámico para las nuevas secciones
-if "Materiales" in st.session_state.current_page:
-    st.info("Listado maestro de materiales y SKUs.")
-elif "Clientes" in st.session_state.current_page:
-    st.info("Base de datos de clientes y centros de distribución.")
-elif "Plantas" in st.session_state.current_page:
-    st.info("Capacidad instalada por planta y líneas de producción.")
+st.info(f"Sección activa: {st.session_state.current_page}")
