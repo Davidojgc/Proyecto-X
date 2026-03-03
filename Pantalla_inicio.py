@@ -3,7 +3,7 @@ import streamlit as st
 # ==========================================
 # 1. CONFIGURACIÓN Y ESTILOS
 # ==========================================
-st.set_page_config(page_title="MOSH - Grifols", layout="wide")
+st.set_page_config(page_title="Proyecto-X - Grifols", layout="wide")
 
 st.markdown("""
     <style>
@@ -65,7 +65,7 @@ if 'usuario' not in st.session_state:
 if not st.session_state.autenticado:
     _, col2, _ = st.columns([1, 1, 1])
     with col2:
-        st.markdown("<br><br><h1 style='text-align: center; color: #004d85;'>💧 MOSH</h1>", unsafe_allow_html=True)
+        st.markdown("<br><br><h1 style='text-align: center; color: #004d85;'>💧 Proyecto-X</h1>", unsafe_allow_html=True)
         st.write("### Identificación")
         
         # Usamos un formulario para agrupar los inputs y el botón
@@ -91,7 +91,7 @@ if not st.session_state.autenticado:
 # ==========================================
 
 with st.sidebar:
-    st.markdown('<div class="mosh-logo">MOSH</div>', unsafe_allow_html=True)
+    st.markdown('<div class="mosh-logo">Proyecto-Z</div>', unsafe_allow_html=True)
     
     if 'current_page' not in st.session_state:
         st.session_state.current_page = 'Nueva propuesta de fabricación'
@@ -130,5 +130,5 @@ with head_col2:
 
 st.write("---")
 st.write(f"## {st.session_state.current_page}")
-st.write("### Mosh")
+st.write("### Proyecto-X")
 st.write("---")
