@@ -14,7 +14,7 @@ st.markdown("""
         /* ESTILO BOTONES SIDEBAR (LIMPIOS) */
         div.stButton > button {
             background-color: transparent;
-            color: white;
+            color: white !important;
             border: none;
             border-radius: 0px;
             width: 100%;
@@ -25,7 +25,17 @@ st.markdown("""
 
         div.stButton > button:hover {
             background-color: rgba(255, 255, 255, 0.1); 
-            color: white;
+            color: white !important;
+        }
+
+        /* FORZAR COLOR BLANCO EN EL TEXTO DE 'DATOS MAESTROS' (EXPANDER) */
+        details[data-testid="stExpander"] summary p {
+            color: white !important;
+        }
+        
+        /* Color de la flecha del expander en blanco */
+        details[data-testid="stExpander"] summary svg {
+            fill: white !important;
         }
 
         .mosh-logo {
@@ -43,7 +53,7 @@ st.markdown("""
         }
 
         /* Estilo para el botón de la pantalla de login */
-        .login-button div.stButton > button {
+        .stForm div.stButton > button {
             background-color: #004d85 !important;
             color: white !important;
             text-align: center !important;
@@ -54,7 +64,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. LÓGICA DE AUTENTICACIÓN (CON FORMULARIO)
+# 2. LÓGICA DE AUTENTICACIÓN
 # ==========================================
 
 if 'autenticado' not in st.session_state:
@@ -68,26 +78,22 @@ if not st.session_state.autenticado:
         st.markdown("<br><br><h1 style='text-align: center; color: #004d85;'>💧 Proyecto-X</h1>", unsafe_allow_html=True)
         st.write("### Identificación")
         
-        # Usamos un formulario para agrupar los inputs y el botón
         with st.form("login_form"):
             user_val = st.text_input("Usuario")
             pass_val = st.text_input("Contraseña", type="password")
-            
-            # Botón justo debajo de la contraseña
             submit_button = st.form_submit_button("Acceder al Programa", use_container_width=True)
             
             if submit_button:
-                if user_val: # Si el usuario ha escrito algo
+                if user_val:
                     st.session_state.autenticado = True
                     st.session_state.usuario = user_val
                     st.rerun()
                 else:
                     st.error("Por favor, introduce tu nombre de usuario.")
-    
     st.stop()
 
 # ==========================================
-# 3. INTERFAZ PRINCIPAL (Solo tras login)
+# 3. INTERFAZ PRINCIPAL
 # ==========================================
 
 with st.sidebar:
@@ -100,6 +106,7 @@ with st.sidebar:
     if st.button("⚙️ Nueva propuesta de fabricación"):
         st.session_state.current_page = 'Nueva propuesta de fabricación'
 
+    # Expander con texto forzado a blanco vía CSS
     with st.expander("📊 Datos maestros", expanded=False):
         st.markdown('<div class="sub-button">', unsafe_allow_html=True)
         if st.button("• Materiales"):
