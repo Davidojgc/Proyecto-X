@@ -3,7 +3,7 @@ import streamlit as st
 # ==========================================
 # 1. CONFIGURACIÓN Y ESTILOS
 # ==========================================
-st.set_page_config(page_title="MOSH - Login", layout="wide")
+st.set_page_config(page_title="Proyecto X - Login", layout="wide")
 
 st.markdown("""
     <style>
