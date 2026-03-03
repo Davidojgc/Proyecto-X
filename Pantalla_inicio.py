@@ -11,7 +11,7 @@ st.markdown("""
             background-color: #004d85;
         }
         
-        /* ESTILO BOTONES SIDEBAR (LIMPIOS) */
+        /* ESTILO BOTONES SIDEBAR (LIMPIOS Y BLANCOS) */
         div.stButton > button {
             background-color: transparent;
             color: white !important;
@@ -28,30 +28,12 @@ st.markdown("""
             color: white !important;
         }
 
-        /* FIX ESPECÍFICO PARA EL BOTÓN DE DATOS MAESTROS (LÍNEA 110) */
-        /* Esto fuerza el color blanco en el texto del expander */
-        .stExpander summary span p {
-            color: white !important;
-        }
-        
-        /* Esto fuerza el color blanco en el icono de la flecha */
-        .stExpander summary svg {
-            fill: white !important;
-            color: white !important;
-        }
-
         .mosh-logo {
             color: white;
             font-size: 32px;
             font-weight: bold;
             padding: 20px 0;
             text-align: center;
-        }
-        
-        /* Estilo para sub-botones */
-        .sub-button div.stButton > button {
-            padding-left: 40px !important;
-            font-size: 14px;
         }
 
         /* Estilo para el botón de la pantalla de login */
@@ -94,32 +76,24 @@ if not st.session_state.autenticado:
     st.stop()
 
 # ==========================================
-# 3. INTERFAZ PRINCIPAL
+# 3. INTERFAZ PRINCIPAL (Solo 3 Botones)
 # ==========================================
 
 with st.sidebar:
     st.markdown('<div class="mosh-logo">Proyecto-X</div>', unsafe_allow_html=True)
     
     if 'current_page' not in st.session_state:
-        st.session_state.current_page = 'Nueva propuesta de fabricación'
+        st.session_state.current_page = 'Nueva propuesta'
 
-    # Botones principales
-    if st.button("⚙️ Nueva propuesta de fabricación"):
-        st.session_state.current_page = 'Nueva propuesta de fabricación'
-
-    # LÍNEA 110: Expander de Datos maestros
-    with st.expander("📊 Datos maestros", expanded=False):
-        st.markdown('<div class="sub-button">', unsafe_allow_html=True)
-        if st.button("• Materiales"):
-            st.session_state.current_page = "Datos maestros - Materiales"
-        if st.button("• Clientes"):
-            st.session_state.current_page = "Datos maestros - Clientes"
-        if st.button("• Plantas y capacidad"):
-            st.session_state.current_page = "Datos maestros - Plantas y capacidad"
-        st.markdown('</div>', unsafe_allow_html=True)
+    # FUNCIONES DE NAVEGACIÓN
+    if st.button("⚙️ Nueva propuesta"):
+        st.session_state.current_page = 'Nueva propuesta'
 
     if st.button("📜 Historial de propuestas"):
         st.session_state.current_page = 'Historial de propuestas'
+
+    if st.button("📅 Calendarios"):
+        st.session_state.current_page = 'Calendarios'
     
     st.markdown("<br><br><br>", unsafe_allow_html=True)
     st.write("---")
@@ -140,3 +114,11 @@ st.write("---")
 st.write(f"## {st.session_state.current_page}")
 st.write("### Proyecto-X")
 st.write("---")
+
+# Contenido dinámico simple
+if st.session_state.current_page == 'Nueva propuesta':
+    st.info("Área para crear nuevas propuestas de fabricación.")
+elif st.session_state.current_page == 'Historial de propuestas':
+    st.info("Consulta de propuestas anteriores.")
+elif st.session_state.current_page == 'Calendarios':
+    st.info("Vista de planificación y calendarios de planta.")
