@@ -1,61 +1,76 @@
 import streamlit as st
 
 # ==========================================
-# 1. CONFIGURACIÓN Y ESTILOS (BOTONES ROJOS)
+# 1. CONFIGURACIÓN Y ESTILOS
 # ==========================================
-st.set_page_config(page_title="MOSH - Grifols", layout="wide")
+st.set_page_config(page_title="MOSH - Login", layout="wide")
 
 st.markdown("""
     <style>
-        /* Fondo azul para el sidebar */
+        /* Estilos generales para botones rojos */
+        div.stButton > button {
+            background-color: #FF4B4B;
+            color: white;
+            border-radius: 5px;
+            font-weight: bold;
+            width: 100%;
+        }
         [data-testid="stSidebar"] {
             background-color: #004d85;
         }
-        
-        /* ESTILO DE LOS BOTONES: Color Rojo */
-        div.stButton > button {
-            background-color: #FF4B4B; /* Rojo vibrante */
-            color: white;
-            border-radius: 5px;
-            border: none;
-            height: 3em;
-            width: 100%;
-            transition: all 0.3s ease;
-            font-weight: bold;
-        }
-
-        /* Efecto al pasar el ratón (hover) */
-        div.stButton > button:hover {
-            background-color: #D32F2F; /* Rojo más oscuro al pasar el mouse */
-            color: white;
-            border: 1px solid white;
-        }
-
-        /* Logo MOSH */
         .mosh-logo {
             color: white;
             font-size: 36px;
             font-weight: bold;
-            margin-bottom: 30px;
             text-align: center;
+            margin-bottom: 20px;
         }
     </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. SIDEBAR CON BOTONES ROJOS
+# 2. LÓGICA DE CONTROL DE SESIÓN
 # ==========================================
+if 'autenticado' not in st.session_state:
+    st.session_state.autenticado = False
+if 'usuario' not in st.session_state:
+    st.session_state.usuario = ""
+
+# --- PANTALLA DE LOGIN ---
+if not st.session_state.autenticado:
+    col1, col2, col3 = st.columns([1, 1, 1])
+    
+    with col2:
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center; color: #004d85;'>💧 MOSH</h1>", unsafe_allow_html=True)
+        st.subheader("Inicio de Sesión")
+        
+        usuario_input = st.text_input("Introduce tu nombre de usuario:")
+        password_input = st.text_input("Contraseña:", type="password") # Simulado
+        
+        if st.button("Entrar"):
+            if usuario_input: # Si el nombre no está vacío
+                st.session_state.autenticado = True
+                st.session_state.usuario = usuario_input
+                st.rerun()
+            else:
+                st.error("Por favor, introduce un nombre de usuario.")
+    st.stop() # Detiene la ejecución aquí si no está autenticado
+
+# ==========================================
+# 3. INTERFAZ PRINCIPAL (Solo si está logueado)
+# ==========================================
+
+# Sidebar
 with st.sidebar:
     st.markdown('<div class="mosh-logo">💧 MOSH</div>', unsafe_allow_html=True)
     
     if 'current_page' not in st.session_state:
         st.session_state.current_page = 'Tablas maestras'
 
-    # Función para navegar
     def set_page(name):
         st.session_state.current_page = name
 
-    # Botones del menú
     st.button("🗺️ Tablas maestras 〉", on_click=set_page, args=('Tablas maestras',))
     st.button("📋 Set Up Planning 〉", on_click=set_page, args=('Set Up Planning',))
     st.button("📦 Lanzamientos", on_click=set_page, args=('Lanzamientos',))
@@ -64,12 +79,15 @@ with st.sidebar:
     st.button("⚙️ Administración 〉", on_click=set_page, args=('Administración',))
     
     st.write("---")
-    st.markdown(f"<p style='color:white;'>👤 David</p>", unsafe_allow_html=True)
-    st.button("🚫 Cerrar Sesión")
+    # Mostramos el usuario que entró en la primera pantalla
+    st.markdown(f"<p style='color:white;'>👤 Usuario: <b>{st.session_state.usuario}</b></p>", unsafe_allow_html=True)
+    
+    if st.button("🚫 Cerrar Sesión"):
+        st.session_state.autenticado = False
+        st.session_state.usuario = ""
+        st.rerun()
 
-# ==========================================
-# 3. CONTENIDO PRINCIPAL
-# ==========================================
+# Cabecera
 head_col1, head_col2 = st.columns([10, 2])
 with head_col1:
     st.write("≡")
@@ -78,7 +96,4 @@ with head_col2:
 
 st.write("---")
 st.write(f"## {st.session_state.current_page}")
-st.write("### Mosh")
-st.write("---")
-
-st.info(f"Sección activa: {st.session_state.current_page}")
+st.write(f"Bienvenido al sistema, **{st.session_state.usuario}**.")
