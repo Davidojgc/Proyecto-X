@@ -28,14 +28,16 @@ st.markdown("""
             color: white !important;
         }
 
-        /* FORZAR COLOR BLANCO EN EL TEXTO DE 'DATOS MAESTROS' (EXPANDER) */
-        details[data-testid="stExpander"] summary p {
+        /* FIX ESPECÍFICO PARA EL BOTÓN DE DATOS MAESTROS (LÍNEA 110) */
+        /* Esto fuerza el color blanco en el texto del expander */
+        .stExpander summary span p {
             color: white !important;
         }
         
-        /* Color de la flecha del expander en blanco */
-        details[data-testid="stExpander"] summary svg {
+        /* Esto fuerza el color blanco en el icono de la flecha */
+        .stExpander summary svg {
             fill: white !important;
+            color: white !important;
         }
 
         .mosh-logo {
@@ -66,7 +68,6 @@ st.markdown("""
 # ==========================================
 # 2. LÓGICA DE AUTENTICACIÓN
 # ==========================================
-
 if 'autenticado' not in st.session_state:
     st.session_state.autenticado = False
 if 'usuario' not in st.session_state:
@@ -106,7 +107,7 @@ with st.sidebar:
     if st.button("⚙️ Nueva propuesta de fabricación"):
         st.session_state.current_page = 'Nueva propuesta de fabricación'
 
-    # Expander con texto forzado a blanco vía CSS
+    # LÍNEA 110: Expander de Datos maestros
     with st.expander("📊 Datos maestros", expanded=False):
         st.markdown('<div class="sub-button">', unsafe_allow_html=True)
         if st.button("• Materiales"):
