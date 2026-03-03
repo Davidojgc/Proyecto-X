@@ -42,7 +42,7 @@ if not st.session_state.autenticado:
     
     with col2:
         st.markdown("<br><br>", unsafe_allow_html=True)
-        st.markdown("<h1 style='text-align: center; color: #004d85;'>💧 MOSH</h1>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center; color: #004d85;'>💧 Proyecto-X</h1>", unsafe_allow_html=True)
         st.subheader("Inicio de Sesión")
         
         usuario_input = st.text_input("Introduce tu nombre de usuario:")
@@ -63,7 +63,7 @@ if not st.session_state.autenticado:
 
 # Sidebar
 with st.sidebar:
-    st.markdown('<div class="mosh-logo">💧 MOSH</div>', unsafe_allow_html=True)
+    st.markdown('<div class="mosh-logo">💧 Proyecto-X</div>', unsafe_allow_html=True)
     
     if 'current_page' not in st.session_state:
         st.session_state.current_page = 'Tablas maestras'
