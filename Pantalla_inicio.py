@@ -1,9 +1,6 @@
 import streamlit as st
-# Importamos tu archivo de GitHub como un módulo
-try:
-    import V3 
-except ImportError:
-    V3 = None
+import importlib.util
+import sys
 
 # ==========================================
 # 1. CONFIGURACIÓN Y ESTILOS
@@ -12,7 +9,10 @@ st.set_page_config(page_title="Proyecto-X - Grifols", layout="wide")
 
 st.markdown("""
     <style>
-        [data-testid="stSidebar"] { background-color: #004d85; }
+        [data-testid="stSidebar"] {
+            background-color: #004d85;
+        }
+        /* Botones del menú lateral siempre blancos y sin recuadro */
         div.stButton > button {
             background-color: transparent;
             color: white !important;
@@ -23,13 +23,21 @@ st.markdown("""
             padding: 10px 20px;
             font-size: 16px;
         }
-        div.stButton > button:hover { background-color: rgba(255, 255, 255, 0.1); }
-        .mosh-logo { color: white; font-size: 32px; font-weight: bold; padding: 20px 0; text-align: center; }
+        div.stButton > button:hover {
+            background-color: rgba(255, 255, 255, 0.1); 
+            color: white !important;
+        }
+        .mosh-logo {
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
+            padding: 20px 0;
+            text-align: center;
+        }
+        /* Botón del login */
         .stForm div.stButton > button {
             background-color: #004d85 !important;
-            color: white !important;
             text-align: center !important;
-            border-radius: 5px !important;
             border: 1px solid white !important;
         }
     </style>
@@ -56,54 +64,60 @@ if not st.session_state.autenticado:
     st.stop()
 
 # ==========================================
-# 3. INTERFAZ PRINCIPAL
+# 3. SIDEBAR (PERMANENTE)
 # ==========================================
 with st.sidebar:
     st.markdown('<div class="mosh-logo">Proyecto-X</div>', unsafe_allow_html=True)
+    
+    # Inicializamos la página por defecto
     if 'current_page' not in st.session_state:
         st.session_state.current_page = 'Nueva propuesta'
 
+    # Botones que cambian el estado pero NO recargan la página completa
     if st.button("⚙️ Nueva propuesta"):
         st.session_state.current_page = 'Nueva propuesta'
+    
     if st.button("📜 Historial de propuestas"):
         st.session_state.current_page = 'Historial de propuestas'
+
     if st.button("📅 Calendarios"):
         st.session_state.current_page = 'Calendarios'
     
+    st.markdown("<br><br><br>", unsafe_allow_html=True)
     st.write("---")
+    st.markdown(f"<p style='color:white; margin-left:20px;'>👤 {st.session_state.usuario}</p>", unsafe_allow_html=True)
+    
     if st.button("🚫 Cerrar Sesión"):
         st.session_state.autenticado = False
         st.rerun()
 
-# --- CABECERA ---
+# ==========================================
+# 4. CUERPO PRINCIPAL (CONTENIDO DINÁMICO)
+# ==========================================
+
+# Cabecera de Grifols (Siempre visible)
 head_col1, head_col2 = st.columns([10, 2])
 with head_col1: st.write("≡")
 with head_col2: st.markdown('<div style="color: #003366; font-size: 24px; font-weight: bold; text-align: right;">GRIFOLS</div>', unsafe_allow_html=True)
 st.write("---")
 
-# ==========================================
-# 4. LLAMADA A TU LIBRERÍA V3.py
-# ==========================================
+# Lógica de despliegue
 if st.session_state.current_page == 'Nueva propuesta':
-    st.write(f"## {st.session_state.current_page}")
-    st.write("### Ejecutando motor V3...")
-    
-    if V3 is not None:
-        # Aquí llamas a la función que contiene tu código en V3.py
-        # Ejemplo: V3.main() o V3.ejecutar_logica()
-        try:
-            V3.main() # <-- CAMBIA ESTO por el nombre de la función en tu V3.py
-        except AttributeError:
-            st.error("Error: No se encontró la función 'main()' en V3.py")
-        except Exception as e:
-            st.error(f"Error al ejecutar V3.py: {e}")
-    else:
-        st.error("No se pudo cargar el archivo V3.py. Asegúrate de que esté en el mismo repositorio.")
+    # Intentamos importar y ejecutar el archivo V3.py
+    try:
+        import V3
+        # Importante: Aquí llamamos a la función principal de tu V3.py
+        # Si tu V3.py no tiene funciones y es código directo, se ejecutará al importar
+        # pero es mejor llamar a una función específica:
+        V3.main() 
+    except Exception as e:
+        st.error(f"Error al cargar la librería V3: {e}")
+        st.info("Asegúrate de que V3.py esté en la raíz de tu repositorio y tenga una función llamada main()")
 
 elif st.session_state.current_page == 'Historial de propuestas':
-    st.write(f"## {st.session_state.current_page}")
-    st.info("Consulta de propuestas anteriores.")
+    st.header("Historial de propuestas")
+    st.write("Aquí se mostrará el histórico de datos.")
 
 elif st.session_state.current_page == 'Calendarios':
-    st.write(f"## {st.session_state.current_page}")
-    st.info("Vista de planificación y calendarios de planta.")
+    st.header("Calendarios de Producción")
+    st.write("Vista de planificación.")
